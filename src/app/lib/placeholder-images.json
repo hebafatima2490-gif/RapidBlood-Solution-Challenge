@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "blood-bank-1",
+      "description": "City Central Blood Bank",
+      "imageUrl": "https://picsum.photos/seed/bb1/600/400",
+      "imageHint": "medical center blood bank"
+    },
+    {
+      "id": "donor-1",
+      "description": "Active Blood Donor",
+      "imageUrl": "https://picsum.photos/seed/d1/400/400",
+      "imageHint": "person portrait"
+    }
+  ]
+}
