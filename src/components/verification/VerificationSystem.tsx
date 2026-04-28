@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, ShieldCheck, AlertTriangle, Scan, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function VerificationSystem() {
   const [isScanning, setIsScanning] = useState(false);
