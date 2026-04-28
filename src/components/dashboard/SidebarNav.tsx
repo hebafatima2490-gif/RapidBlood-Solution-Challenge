@@ -1,3 +1,4 @@
+
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -8,7 +9,8 @@ import {
   Settings, 
   History, 
   Activity,
-  Droplets
+  Droplets,
+  UserCircle
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,6 +20,7 @@ const navItems = [
   { icon: MapIcon, label: "Live Map", href: "/dashboard/map" },
   { icon: Activity, label: "Analytics", href: "/dashboard/analytics" },
   { icon: History, label: "Log History", href: "/dashboard/history" },
+  { icon: UserCircle, label: "User Profile", href: "/dashboard/profile" },
   { icon: Settings, label: "System Config", href: "/dashboard/settings" },
 ];
 
