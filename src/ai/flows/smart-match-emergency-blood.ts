@@ -162,7 +162,7 @@ Your task is to:
 
 When using the 'calculateRouteAndEta' tool, ensure you pass the correct latitude and longitude values from the blood bank/donor location as the 'origin' and the hospital location as the 'destination'.
 
-Strictly adhere to the output schema. Ensure all fields are populated correctly. If no match can be found at all, return an empty `bestMatch` object and set `donorActivationNeeded` to true with suggestions if any, or a plan indicating no immediate source found.
+Strictly adhere to the output schema. Ensure all fields are populated correctly. If no match can be found at all, return an empty \`bestMatch\` object and set \`donorActivationNeeded\` to true with suggestions if any, or a plan indicating no immediate source found.
 `,
 });
 
