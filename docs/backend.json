@@ -1,0 +1,597 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user within the RapidBlood system, covering common authentication and role information. Specific role-based data is stored in separate entities linked via foreign keys.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's unique email address, used for communication.",
+          "format": "email"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The full name of the user."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The user's primary contact phone number."
+        },
+        "address": {
+          "type": "string",
+          "description": "The user's physical address or primary location."
+        },
+        "role": {
+          "type": "string",
+          "description": "The primary role of the user in the system, dictating dashboard access and permissions.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hospitalId": {
+          "type": "string",
+          "description": "Reference to the Hospital entity if the user's role is 'HospitalPersonnel'. (Relationship: Hospital 1:N UserProfile)"
+        },
+        "bloodBankId": {
+          "type": "string",
+          "description": "Reference to the BloodBank entity if the user's role is 'BloodBankPersonnel'. (Relationship: BloodBank 1:N UserProfile)"
+        },
+        "donorProfileId": {
+          "type": "string",
+          "description": "Reference to the DonorProfile entity if the user's role is 'Donor'. (Relationship: DonorProfile 1:1 UserProfile)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "fullName",
+        "phoneNumber",
+        "address",
+        "role",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Hospital": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Hospital",
+      "type": "object",
+      "description": "Represents a hospital or healthcare facility that can raise emergency blood requests and receive deliveries.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Hospital entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the hospital."
+        },
+        "address": {
+          "type": "string",
+          "description": "The full physical address of the hospital."
+        },
+        "location": {
+          "type": "string",
+          "description": "Geographical coordinates of the hospital (e.g., 'latitude,longitude') for proximity matching and delivery routing."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "The primary contact email for the hospital.",
+          "format": "email"
+        },
+        "contactPhoneNumber": {
+          "type": "string",
+          "description": "The primary contact phone number for the hospital."
+        },
+        "operatingHours": {
+          "type": "string",
+          "description": "Information about the hospital's operating hours (e.g., '24/7', 'M-F 9-5')."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address",
+        "location",
+        "contactEmail",
+        "contactPhoneNumber",
+        "operatingHours"
+      ]
+    },
+    "BloodBank": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BloodBank",
+      "type": "object",
+      "description": "Represents a blood bank facility responsible for collecting, storing, and supplying blood units.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BloodBank entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the blood bank."
+        },
+        "address": {
+          "type": "string",
+          "description": "The full physical address of the blood bank."
+        },
+        "location": {
+          "type": "string",
+          "description": "Geographical coordinates of the blood bank (e.g., 'latitude,longitude') for proximity matching and inventory display."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "The primary contact email for the blood bank.",
+          "format": "email"
+        },
+        "contactPhoneNumber": {
+          "type": "string",
+          "description": "The primary contact phone number for the blood bank."
+        },
+        "operatingHours": {
+          "type": "string",
+          "description": "Information about the blood bank's operating hours."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address",
+        "location",
+        "contactEmail",
+        "contactPhoneNumber",
+        "operatingHours"
+      ]
+    },
+    "DonorProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DonorProfile",
+      "type": "object",
+      "description": "Contains specific medical and availability details for a registered blood donor, linked to a UserProfile.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DonorProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the associated UserProfile entity. (Relationship: UserProfile 1:1 DonorProfile)"
+        },
+        "bloodGroup": {
+          "type": "string",
+          "description": "The donor's blood type, including Rh factor.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastDonationDate": {
+          "type": "string",
+          "description": "The date of the donor's most recent blood donation. Nullable if never donated.",
+          "format": "date-time"
+        },
+        "isAvailableForEmergency": {
+          "type": "boolean",
+          "description": "Indicates if the donor is willing to receive emergency blood donation alerts and be considered for matches."
+        },
+        "currentLocation": {
+          "type": "string",
+          "description": "The donor's current geographical coordinates (e.g., 'latitude,longitude'), used for proximity matching in emergency alerts (if enabled)."
+        },
+        "healthEligibilityStatus": {
+          "type": "string",
+          "description": "The current eligibility status of the donor for donation, based on health criteria.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "bloodGroup",
+        "isAvailableForEmergency",
+        "healthEligibilityStatus"
+      ]
+    },
+    "BloodUnit": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BloodUnit",
+      "type": "object",
+      "description": "Represents a single, unique unit of blood, identified by a QR/barcode for verification.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BloodUnit entity."
+        },
+        "bloodBankId": {
+          "type": "string",
+          "description": "Reference to the BloodBank where this unit is currently stored. (Relationship: BloodBank 1:N BloodUnit)"
+        },
+        "donorId": {
+          "type": "string",
+          "description": "Reference to the DonorProfile who donated this blood unit. (Relationship: DonorProfile 1:N BloodUnit)"
+        },
+        "bloodGroup": {
+          "type": "string",
+          "description": "The blood type of this unit.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "collectionDate": {
+          "type": "string",
+          "description": "The date and time when the blood unit was collected.",
+          "format": "date-time"
+        },
+        "expirationDate": {
+          "type": "string",
+          "description": "The date and time when the blood unit will expire.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the blood unit, reflecting its availability and usability.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "qrCodeIdentifier": {
+          "type": "string",
+          "description": "A unique QR/barcode identifier printed on the blood unit for verification before transfusion."
+        }
+      },
+      "required": [
+        "id",
+        "bloodBankId",
+        "donorId",
+        "bloodGroup",
+        "collectionDate",
+        "expirationDate",
+        "status",
+        "qrCodeIdentifier"
+      ]
+    },
+    "EmergencyBloodRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EmergencyBloodRequest",
+      "type": "object",
+      "description": "Represents an urgent request for blood initiated by a hospital, triggering the coordination and dispatch process.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EmergencyBloodRequest entity."
+        },
+        "hospitalId": {
+          "type": "string",
+          "description": "Reference to the Hospital entity that made the request. (Relationship: Hospital 1:N EmergencyBloodRequest)"
+        },
+        "requestedByUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile of the personnel who initiated the request. (Relationship: UserProfile 1:N EmergencyBloodRequest)"
+        },
+        "bloodGroupRequested": {
+          "type": "string",
+          "description": "The specific blood type requested by the hospital.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unitsRequired": {
+          "type": "number",
+          "description": "The number of blood units requested."
+        },
+        "requestDateTime": {
+          "type": "string",
+          "description": "The date and time when the emergency request was made.",
+          "format": "date-time"
+        },
+        "urgencyLevel": {
+          "type": "string",
+          "description": "The urgency level of the blood request, influencing matching priority.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the emergency blood request throughout its lifecycle.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "matchedBloodUnitIds": {
+          "type": "array",
+          "description": "References to BloodUnit entities that have been matched to fulfill this request. (Relationship: BloodUnit N:N EmergencyBloodRequest)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notifiedDonorIds": {
+          "type": "array",
+          "description": "References to DonorProfile entities who were notified about this emergency request because blood bank stock was low. (Relationship: DonorProfile N:N EmergencyBloodRequest)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "acceptedDonorId": {
+          "type": "string",
+          "description": "Reference to the DonorProfile who accepted to donate for this specific request, if direct donor activation occurred. (Relationship: DonorProfile 1:N EmergencyBloodRequest)"
+        },
+        "deliveryTrackingId": {
+          "type": "string",
+          "description": "Reference to the DeliveryTracking entity for this request, providing live delivery updates. (Relationship: EmergencyBloodRequest 1:1 DeliveryTracking)"
+        },
+        "estimatedDeliveryTime": {
+          "type": "string",
+          "description": "The estimated time of delivery for the blood units, calculated by the smart matching system.",
+          "format": "date-time"
+        },
+        "fulfillmentDetails": {
+          "type": "string",
+          "description": "Additional details about the fulfillment of the request, e.g., actual units delivered or source."
+        }
+      },
+      "required": [
+        "id",
+        "hospitalId",
+        "requestedByUserId",
+        "bloodGroupRequested",
+        "unitsRequired",
+        "requestDateTime",
+        "urgencyLevel",
+        "status"
+      ]
+    },
+    "DeliveryTracking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DeliveryTracking",
+      "type": "object",
+      "description": "Manages and displays the real-time status, location, and timeline of a blood unit delivery, similar to food delivery apps.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DeliveryTracking entity."
+        },
+        "bloodRequestId": {
+          "type": "string",
+          "description": "Reference to the EmergencyBloodRequest being tracked. (Relationship: EmergencyBloodRequest 1:1 DeliveryTracking)"
+        },
+        "currentStatus": {
+          "type": "string",
+          "description": "The current stage of the blood unit delivery process.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "statusTimeline": {
+          "type": "array",
+          "description": "A chronological record of status updates for the delivery, including timestamps and optional notes.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "courierUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile of the courier handling the delivery, if applicable. (Relationship: UserProfile 1:N DeliveryTracking)"
+        },
+        "liveLocation": {
+          "type": "string",
+          "description": "The real-time geographical coordinates (e.g., 'latitude,longitude') of the delivery vehicle or courier for live tracking."
+        },
+        "eta": {
+          "type": "string",
+          "description": "The estimated time of arrival for the delivery, dynamically updated.",
+          "format": "date-time"
+        },
+        "dispatchDateTime": {
+          "type": "string",
+          "description": "The date and time when the blood unit was dispatched.",
+          "format": "date-time"
+        },
+        "deliveryDateTime": {
+          "type": "string",
+          "description": "The date and time when the blood unit was successfully delivered.",
+          "format": "date-time"
+        },
+        "actualRoutePath": {
+          "type": "array",
+          "description": "A history of geographical points and timestamps indicating the actual delivery route taken for post-delivery analysis.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "bloodRequestId",
+        "currentStatus",
+        "statusTimeline",
+        "eta"
+      ]
+    },
+    "DonationEvent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DonationEvent",
+      "type": "object",
+      "description": "Records the details of a specific blood donation made by a donor at a blood bank.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DonationEvent entity."
+        },
+        "donorId": {
+          "type": "string",
+          "description": "Reference to the DonorProfile who made the donation. (Relationship: DonorProfile 1:N DonationEvent)"
+        },
+        "bloodBankId": {
+          "type": "string",
+          "description": "Reference to the BloodBank where the donation took place. (Relationship: BloodBank 1:N DonationEvent)"
+        },
+        "donationDate": {
+          "type": "string",
+          "description": "The date and time when the donation occurred.",
+          "format": "date-time"
+        },
+        "bloodUnitIds": {
+          "type": "array",
+          "description": "References to BloodUnit entities created from this donation. (Relationship: BloodUnit N:1 DonationEvent)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any additional notes or remarks about the donation event (e.g., specific conditions)."
+        }
+      },
+      "required": [
+        "id",
+        "donorId",
+        "bloodBankId",
+        "donationDate",
+        "bloodUnitIds"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a system-generated notification or alert sent to a specific user, informing them of critical updates or actions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Notification entity."
+        },
+        "recipientUserId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who is the intended recipient of this notification. (Relationship: UserProfile 1:N Notification)"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of notification, categorizing its purpose and content.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "message": {
+          "type": "string",
+          "description": "The content message of the notification to be displayed to the user."
+        },
+        "relatedEntityId": {
+          "type": "string",
+          "description": "Reference to the ID of the entity that this notification pertains to (e.g., EmergencyBloodRequest.id, BloodBank.id), allowing navigation to relevant details."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates whether the recipient has read this notification."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the notification was created and sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "recipientUserId",
+        "type",
+        "message",
+        "relatedEntityId",
+        "isRead",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "userProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores the primary profile for a user. Document ID (`userId`) is mapped directly to `request.auth.uid` for path-based ownership. Includes foreign keys for associated Hospital, BloodBank, or DonorProfile, and the user's primary role. This structure ensures authorization independence for individual user profile access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/donorProfile",
+        "definition": {
+          "entityName": "donorProfile",
+          "schema": {
+            "$ref": "#/backend/entities/DonorProfile"
+          },
+          "description": "Stores the specific donor profile details for a user. This is a subcollection document, with its ID being the same `userId` as the parent, ensuring a 1:1 relationship and strong path-based ownership inherited from the UserProfile. Access is restricted to the owner for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this donor profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/hospitals/{hospitalId}",
+        "definition": {
+          "entityName": "hospital",
+          "schema": {
+            "$ref": "#/backend/entities/Hospital"
+          },
+          "description": "Stores details for each hospital. Includes a denormalized 'members' map (e.g., `members: { 'userId': 'role' }`) within the document itself for authorization independence, allowing security rules to directly check `request.auth.uid` for management permissions without needing `get()` operations.",
+          "params": [
+            {
+              "name": "hospitalId",
+              "description": "The unique identifier for the hospital."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bloodBanks/{bloodBankId}",
+        "definition": {
+          "entityName": "bloodBank",
+          "schema": {
+            "$ref": "#/backend/entities/BloodBank"
+          },
+          "description": "Stores details for each blood bank. Includes a denormalized 'members' map (e.g., `members: { 'userId': 'role' }`) within the document itself for authorization independence, allowing security rules to directly check `request.auth.uid` for management permissions without needing `get()` operations.",
+          "params": [
+            {
+              "name": "bloodBankId",
+              "description": "The unique identifier for the blood bank."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure prioritizes secure, scalable, and debuggable authorization by adhering to the core design principles, especially **Authorization Independence** and **Structural Segregation**.\n\n1.  **User Profiles (`/users/{userId}`)**: Each user's primary profile is stored in a top-level collection where the document ID (`userId`) directly corresponds to the authenticated user's UID (`request.auth.uid`). This inherently ensures **Authorization Independence** because rules can simply check `request.auth.uid == userId` without any `get()` calls. This also guarantees **QAPs (Query as Predicate)** as `list` operations implicitly filter by `request.auth.uid` by reading only their own document, and `get` operations are direct and secure.\n\n2.  **Donor Profiles (`/users/{userId}/donorProfile`)**: Given the 1:1 relationship between `UserProfile` and `DonorProfile`, the `DonorProfile` is stored as a subcollection document directly under the respective user's profile. The document ID of the `donorProfile` will be the same as the `userId` from the parent path, reinforcing the 1:1 link and allowing rules to enforce `request.auth.uid == userId` for the donor profile as well. This structure ensures strong **Authorization Independence** and maintains path-based ownership.\n\n3.  **Hospitals (`/hospitals/{hospitalId}`) & Blood Banks (`/bloodBanks/{bloodBankId}`)**: These are global entities that require multi-user management. To achieve **Authorization Independence** for personnel managing these entities, each `Hospital` and `BloodBank` document will include a denormalized `members` map (e.g., `members: { 'userId1': 'admin', 'userId2': 'manager' }`). This membership map directly stores which users have what roles for that specific entity. Security rules can then simply check `request.auth.uid in resource.data.members` for write/update access without performing any `get()` operations on the `UserProfile` or separate role collections. This strategy aligns with the **Collaborative Data** mandate and directly supports **QAPs** by allowing rules to efficiently evaluate permissions based on `resource.data`.\n\n**Overall Justification**: This design minimizes `get()` operations in security rules, making them simpler, faster, and less prone to transaction/batch issues. By segregating data based on security posture (private user data vs. collaborative organizational data) and denormalizing authorization context, the system provides clear, explicit authorization intent and is highly debuggable. The use of descriptive wildcards (`{userId}`, `{hospitalId}`, `{bloodBankId}`) further enhances clarity and predictability."
+  }
+}

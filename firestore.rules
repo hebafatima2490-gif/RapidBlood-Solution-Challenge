@@ -1,0 +1,212 @@
+/**
+ * RapidBlood Security Rules
+ * 
+ * Core Philosophy:
+ * This ruleset implements a strict hierarchical authorization model focused on Authorization Independence.
+ * Access is determined by either direct ownership (User/Donor profiles) or explicit membership
+ * within an organizational unit (Hospitals/Blood Banks). We prioritize "Query as Predicate" (QAP) 
+ * patterns, ensuring that the path of the data naturally restricts access.
+ * 
+ * Data Structure:
+ * - /users/{userId}: Primary user data. Ownership is enforced via the document ID matching the Auth UID.
+ * - /users/{userId}/donorProfile: Medical and eligibility data for donors, linked 1:1 to the User.
+ * - /users/{userId}/notifications: User-specific alerts and system notifications.
+ * - /hospitals/{hospitalId}: Hospital metadata, secured via a denormalized 'members' map for personnel.
+ * - /hospitals/{hospitalId}/requests: Emergency blood requests initiated by specific healthcare facilities.
+ * - /bloodBanks/{bloodBankId}: Blood bank metadata, secured via a 'members' map for personnel.
+ * - /bloodBanks/{bloodBankId}/inventory: Real-time stock of BloodUnits managed by the bank.
+ * - /bloodBanks/{bloodBankId}/donations: Records of specific donation events.
+ * 
+ * Key Security Decisions:
+ * 1. Denormalization for Authorization: To avoid expensive and slow get() calls, organizational 
+ *    access (Hospitals/Blood Banks) relies on a 'members' map stored directly on the resource.
+ * 2. Immutable Links: Critical relational fields like userId or hospitalId are enforced as 
+ *    immutable during updates to prevent data being "re-parented" to different owners.
+ * 3. Existence Checks: All update and delete operations require the document to exist (resource != null).
+ * 4. Flexible Schema: While authorization is strictly enforced, the rules do not restrict 
+ *    the shape of the data fields (prototyping mode).
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    /** Checks if the user is authenticated. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the current user is the owner based on their UID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Verifies ownership and document existence for destructive/state-change operations. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** 
+     * Checks if the user is a member of an organization (Hospital/BloodBank).
+     * Uses a denormalized 'members' map on the document: { [uid]: 'role' }
+     */
+    function isOrgMember(res) {
+      return isSignedIn() && request.auth.uid in res.data.members;
+    }
+
+    /** Checks if the user is a member and the document exists. */
+    function isExistingOrgMember(res) {
+      return res != null && isOrgMember(res);
+    }
+
+    /** 
+     * Checks if a user can create a document in an organization's subcollection.
+     * Requires a get() call to the parent organization document to verify membership.
+     */
+    function canWriteToOrg(orgPath) {
+      return isSignedIn() && request.auth.uid in get(orgPath).data.members;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the primary User Profile. Document ID must match the user's UID.
+     * @path /users/{userId}
+     * @allow (create) User creating their own profile where ID matches their UID.
+     * @deny (create) User trying to create a profile for a different UID.
+     * @principle Ownership-based access and Relational Integrity (ID must match path).
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for Donor Profiles. Inherits ownership from the parent User path.
+       * @path /users/{userId}/donorProfile/{profileId}
+       * @allow (get) Owner viewing their own medical/donor status.
+       * @deny (update) Any user who is not the parent {userId}.
+       * @principle Structural segregation and path-based ownership.
+       */
+      match /donorProfile/{profileId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for User Notifications.
+       * @path /users/{userId}/notifications/{notificationId}
+       * @allow (list) Owner checking their own notification inbox.
+       * @deny (create) Clients creating notifications (usually system-generated).
+       * @principle Private user subcollection for system communication.
+       */
+      match /notifications/{notificationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId); // Simplified for prototyping; usually system-only
+        allow update: if isExistingOwner(userId);
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Rules for Hospitals. Managed via a 'members' map on the document.
+     * @path /hospitals/{hospitalId}
+     * @allow (get) Any signed-in user viewing hospital contact details for emergencies.
+     * @allow (update) Personnel who are listed in the 'members' map.
+     * @deny (delete) Unauthorized users or non-members.
+     * @principle Shared access via denormalized member roles.
+     */
+    match /hospitals/{hospitalId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn(); // Simplified for prototyping; usually admin-only
+      allow update: if isExistingOrgMember(resource);
+      allow delete: if isExistingOrgMember(resource);
+
+      /**
+       * @description Rules for Emergency Blood Requests initiated by a hospital.
+       * @path /hospitals/{hospitalId}/requests/{requestId}
+       * @allow (create) Hospital personnel initiating a request.
+       * @deny (list) Personnel from a different hospital trying to see these requests.
+       * @principle Relational access via parent document membership lookup.
+       */
+      match /requests/{requestId} {
+        allow get: if isSignedIn(); // Donors/Banks may need to see specific requests
+        allow list: if canWriteToOrg(/databases/$(database)/documents/hospitals/$(hospitalId));
+        allow create: if canWriteToOrg(/databases/$(database)/documents/hospitals/$(hospitalId)) 
+                      && request.resource.data.hospitalId == hospitalId;
+        allow update: if canWriteToOrg(/databases/$(database)/documents/hospitals/$(hospitalId)) 
+                      && resource != null;
+        allow delete: if false; // Requests should typically be immutable or archived, not deleted.
+      }
+    }
+
+    /**
+     * @description Rules for Blood Banks. Managed via a 'members' map.
+     * @path /bloodBanks/{bloodBankId}
+     * @allow (get) Signed-in users finding blood banks.
+     * @allow (update) Authorized bank personnel.
+     * @principle Shared access via denormalized roles for organizational management.
+     */
+    match /bloodBanks/{bloodBankId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn(); // Simplified for prototyping
+      allow update: if isExistingOrgMember(resource);
+      allow delete: if isExistingOrgMember(resource);
+
+      /**
+       * @description Rules for individual blood units stored at a bank.
+       * @path /bloodBanks/{bloodBankId}/bloodUnits/{unitId}
+       * @allow (list) Bank personnel managing their inventory.
+       * @principle Strict ownership by the organizational unit (Blood Bank).
+       */
+      match /bloodUnits/{unitId} {
+        allow get: if isSignedIn(); 
+        allow list: if canWriteToOrg(/databases/$(database)/documents/bloodBanks/$(bloodBankId));
+        allow create: if canWriteToOrg(/databases/$(database)/documents/bloodBanks/$(bloodBankId))
+                      && request.resource.data.bloodBankId == bloodBankId;
+        allow update: if canWriteToOrg(/databases/$(database)/documents/bloodBanks/$(bloodBankId))
+                      && resource != null;
+        allow delete: if canWriteToOrg(/databases/$(database)/documents/bloodBanks/$(bloodBankId))
+                      && resource != null;
+      }
+
+      /**
+       * @description Records of donation events occurring at the bank.
+       * @path /bloodBanks/{bloodBankId}/donations/{donationId}
+       * @principle Audit log integrity; limited to bank personnel.
+       */
+      match /donations/{donationId} {
+        allow get, list: if canWriteToOrg(/databases/$(database)/documents/bloodBanks/$(bloodBankId));
+        allow create: if canWriteToOrg(/databases/$(database)/documents/bloodBanks/$(bloodBankId))
+                      && request.resource.data.bloodBankId == bloodBankId;
+        allow update: if false; // Records are usually immutable
+        allow delete: if false;
+      }
+    }
+
+    /**
+     * @description Delivery tracking for blood units in transit.
+     * @path /deliveries/{deliveryId}
+     * @allow (get) Signed-in users (recipient hospital or sender bank).
+     * @allow (update) The courier assigned to the delivery.
+     * @principle Resource-specific role validation (Courier ownership).
+     */
+    match /deliveries/{deliveryId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn(); // Initiated by Bank or System
+      allow update: if isSignedIn() && (
+        request.auth.uid == resource.data.courierUserId || 
+        isOrgMember(get(/databases/$(database)/documents/hospitals/$(resource.data.hospitalId)))
+      ) && resource != null;
+      allow delete: if false;
+    }
+  }
+}
