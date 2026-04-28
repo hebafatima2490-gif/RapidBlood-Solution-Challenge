@@ -6,6 +6,7 @@ import { DeliveryTracker } from "@/components/tracking/DeliveryTracker";
 import { VerificationSystem } from "@/components/verification/VerificationSystem";
 import { Card } from "@/components/ui/card";
 import { ShieldAlert, Droplets, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function HospitalDashboard() {
   return (
