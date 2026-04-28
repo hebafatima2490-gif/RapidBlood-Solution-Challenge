@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, Clock, Truck, MapPin, Package, ShieldCheck, PartyPopper } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Clock, Truck, MapPin, Package, ShieldCheck, PartyPopper, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const stages = [
@@ -17,22 +18,25 @@ export function DeliveryTracker() {
   const [currentStageId, setCurrentStageId] = useState(3);
   const [isDelivered, setIsDelivered] = useState(false);
 
-  // Simple simulation for demonstration: progress the tracker
+  // Automatically progress to "In Transit" for demonstration, but stop there.
   useEffect(() => {
-    if (currentStageId < 5) {
+    if (currentStageId < 4) {
       const timer = setTimeout(() => {
         setCurrentStageId(prev => prev + 1);
-      }, 8000); // Progress every 8 seconds for demo
+      }, 6000); 
       return () => clearTimeout(timer);
-    } else {
-      setIsDelivered(true);
     }
   }, [currentStageId]);
+
+  const handleConfirmArrival = () => {
+    setCurrentStageId(5);
+    setIsDelivered(true);
+  };
 
   return (
     <Card className={cn(
       "p-6 border-border transition-all duration-500 overflow-hidden relative",
-      isDelivered ? "bg-green-500/5 border-green-500/30" : "bg-card"
+      isDelivered ? "bg-green-500/5 border-green-500/30 shadow-[0_0_30px_rgba(34,197,94,0.1)]" : "bg-card"
     )}>
       {isDelivered && (
         <div className="absolute top-0 left-0 w-full h-1 bg-green-500 animate-pulse" />
@@ -44,7 +48,7 @@ export function DeliveryTracker() {
             Live Tracking: REQ-101
             {isDelivered && <PartyPopper className="w-4 h-4 text-green-500 animate-bounce" />}
           </h3>
-          <p className="text-sm text-muted-foreground">O- Negative | Batch: #88392</p>
+          <p className="text-sm text-muted-foreground font-medium">O- Negative | Batch: #88392</p>
         </div>
         <div className="text-right">
           <div className={cn(
@@ -52,25 +56,24 @@ export function DeliveryTracker() {
             isDelivered ? "text-green-500" : "text-accent"
           )}>
             <Clock className="w-5 h-5" />
-            <span className="text-xl font-bold font-headline">
+            <span className="text-xl font-bold font-headline tabular-nums">
               {isDelivered ? "ARRIVED" : "08:24"}
             </span>
           </div>
-          <p className="text-[10px] text-muted-foreground uppercase font-bold">
-            {isDelivered ? "Status Verified" : "Estimated Arrival"}
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+            {isDelivered ? "Arrival Logged" : "Estimated Arrival"}
           </p>
         </div>
       </div>
 
       <div className="relative">
         {/* Connection Line */}
-        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-muted-foreground/20 ml-[-1px]" />
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-muted-foreground/10 ml-[-1px]" />
         
         <div className="space-y-8">
           {stages.map((stage) => {
             const isComplete = stage.id < currentStageId || (stage.id === 5 && isDelivered);
             const isActive = stage.id === currentStageId && !isDelivered;
-            const isPending = stage.id > currentStageId && !isDelivered;
             
             return (
               <div key={stage.id} className="relative flex items-center gap-6 group">
@@ -85,28 +88,42 @@ export function DeliveryTracker() {
                 
                 <div className="flex-1">
                   <p className={cn(
-                    "font-medium transition-colors",
+                    "font-bold text-sm transition-colors",
                     isComplete || isActive ? "text-white" : "text-muted-foreground"
                   )}>
                     {stage.label}
                   </p>
-                  {isActive && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <div className="h-1.5 w-32 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-accent w-3/4 animate-pulse" />
+                  {isActive && stage.id === 4 && (
+                    <div className="mt-2 flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 w-32 bg-secondary rounded-full overflow-hidden">
+                          <div className="h-full bg-accent w-3/4 animate-pulse" />
+                        </div>
+                        <span className="text-[9px] text-accent font-bold uppercase">Transit Active</span>
                       </div>
-                      <span className="text-[10px] text-accent font-bold uppercase">Moving</span>
+                      
+                      <Button 
+                        size="sm" 
+                        onClick={handleConfirmArrival}
+                        className="w-fit bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] h-8 rounded-lg px-4"
+                      >
+                        Confirm Arrival
+                        <ChevronRight className="w-3 h-3 ml-1" />
+                      </Button>
                     </div>
+                  )}
+                  {isActive && stage.id < 4 && (
+                     <p className="text-[10px] text-muted-foreground uppercase mt-1">Processing...</p>
                   )}
                   {stage.id === 5 && isDelivered && (
                     <p className="text-[10px] text-green-500 font-bold uppercase mt-1 animate-in fade-in slide-in-from-left-2">
-                      Ready for Verification
+                      Handover Complete
                     </p>
                   )}
                 </div>
 
                 {isComplete && stage.id !== 5 && (
-                  <span className="text-[10px] text-muted-foreground italic">Verified</span>
+                  <span className="text-[9px] text-muted-foreground/60 uppercase font-bold">Done</span>
                 )}
               </div>
             );
@@ -115,12 +132,15 @@ export function DeliveryTracker() {
       </div>
 
       {isDelivered && (
-        <div className="mt-6 pt-6 border-t border-green-500/20 animate-in fade-in slide-in-from-bottom-2">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-            <ShieldCheck className="w-5 h-5 text-green-500" />
-            <p className="text-xs text-green-500 font-medium leading-tight">
-              Unit has arrived at the Trauma Center. Please proceed to the <span className="font-bold underline">Unit Verification</span> system to confirm safety.
-            </p>
+        <div className="mt-8 pt-6 border-t border-green-500/10 animate-in fade-in slide-in-from-bottom-2">
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/10 border border-green-500/20">
+            <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-xs text-green-500 font-bold uppercase tracking-wide">Ready for Safety Scan</p>
+              <p className="text-[11px] text-white/70 leading-relaxed">
+                Unit #88392 has been physically received. You must now use the <span className="text-white font-bold">Verification System</span> to scan the QR code and confirm medical integrity before use.
+              </p>
+            </div>
           </div>
         </div>
       )}
